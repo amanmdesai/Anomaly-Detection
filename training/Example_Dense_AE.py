@@ -1,36 +1,20 @@
 #!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
 
 
-import numpy as np
 import h5py
-import math
-import os
-import pathlib
 import matplotlib.pyplot as plt
-import matplotlib
-
+import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import (
-    Input,
-    Dense,
-    BatchNormalization,
-    Activation,
-    Layer,
-    ReLU,
-    LeakyReLU,
-)
 from tensorflow.keras import backend as K
-
+from tensorflow.keras.layers import Activation  # LeakyReLU,; ReLU,
+from tensorflow.keras.layers import BatchNormalization, Dense, Input, Layer
+from tensorflow.keras.models import Model
 
 # In[2]:
 
 
-#from func import load_model, save_model
+# from func import load_model, save_model
 
 
 # ## Load dataset
@@ -38,7 +22,7 @@ from tensorflow.keras import backend as K
 # In[3]:
 
 
-folder = '../preprocessing-code/'
+folder = "../preprocessing-code/"
 filename = "BKG_dataset.h5"
 
 
@@ -46,7 +30,7 @@ filename = "BKG_dataset.h5"
 
 
 # make sure input data has correct input shape - background training data
-with h5py.File(folder+filename, "r") as file:
+with h5py.File(folder + filename, "r") as file:
     X_train = np.array(file["X_train"])
     X_test = np.array(file["X_test"])
     X_val = np.array(file["X_val"])
@@ -59,9 +43,9 @@ with h5py.File(folder+filename, "r") as file:
 
 input_shape = 60
 latent_dimension = 5
-num_nodes = [20, 15]
+num_nodes = [16, 14]
 EPOCHS = 15
-BATCH_SIZE = 512
+BATCH_SIZE = 1024
 
 
 # In[6]:
@@ -70,17 +54,17 @@ BATCH_SIZE = 512
 # encoder
 inputArray = Input(shape=(input_shape))
 x = Dense(num_nodes[0], use_bias=False)(inputArray)
-x = Activation("ReLU")(x)
+x = Activation("LeakyReLU")(x)
 x = Dense(num_nodes[1], use_bias=False)(x)
-x = Activation("ReLU")(x)
+x = Activation("LeakyReLU")(x)
 x = Dense(latent_dimension, use_bias=False)(x)
-encoder = Activation("ReLU")(x)
+encoder = Activation("LeakyReLU")(x)
 
 # decoder
 x = Dense(num_nodes[0], use_bias=False)(encoder)
-x = Activation("ReLU")(x)
+x = Activation("LeakyReLU")(x)
 x = Dense(num_nodes[1], use_bias=False)(x)
-x = Activation("ReLU")(x)
+x = Activation("LeakyReLU")(x)
 decoder = Dense(input_shape)(x)
 
 # create autoencoder
@@ -91,26 +75,26 @@ autoencoder.summary()
 # In[7]:
 
 
-autoencoder.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001), loss="mse",metrics=['ACC']) #,metrics=['AUC','ACC','MSE'])
+autoencoder.compile(
+    optimizer=keras.optimizers.Adam(), loss="mse", metrics=["ACC"]
+)  # ,metrics=['AUC','ACC','MSE'])
 
 
 # ## Train model
 
-# In[8]:
-
-
+# learning_rate=0.0005
 
 
 # In[9]:
 
-callbacks=tf.keras.callbacks.EarlyStopping(
-    monitor='val_ACC',
+callbacks = tf.keras.callbacks.EarlyStopping(
+    monitor="val_ACC",
     min_delta=0,
     patience=10,
     verbose=0,
-    mode='auto',
+    mode="auto",
     baseline=None,
-    restore_best_weights=False
+    restore_best_weights=False,
 )
 
 history = autoencoder.fit(
@@ -119,7 +103,7 @@ history = autoencoder.fit(
     epochs=EPOCHS,
     batch_size=BATCH_SIZE,
     validation_data=(X_val, X_val),
-    callbacks=callbacks
+    # callbacks=callbacks,
 )
 
 
@@ -128,7 +112,7 @@ history = autoencoder.fit(
 
 model_name = "model_name"
 model_directory = ""
-#save_model(model_directory + model_name, autoencoder)
+# save_model(model_directory + model_name, autoencoder)
 
 
 # ## Prediction - background
@@ -152,7 +136,12 @@ signal_labels = ["Ato4l", "hChToTauNu", "hToTauTau", "leptoquark"]
 
 
 # add correct path to signal files
-signals_file = ["Ato4l_lepFilter_13TeV_dataset.h5", "hChToTauNu_13TeV_PU20_dataset.h5", "hToTauTau_13TeV_PU20_dataset.h5", "leptoquark_LOWMASS_lepFilter_13TeV_dataset.h5"]
+signals_file = [
+    "Ato4l_lepFilter_13TeV_dataset.h5",
+    "hChToTauNu_13TeV_PU20_dataset.h5",
+    "hToTauTau_13TeV_PU20_dataset.h5",
+    "leptoquark_LOWMASS_lepFilter_13TeV_dataset.h5",
+]
 
 
 # In[ ]:
@@ -161,7 +150,7 @@ signals_file = ["Ato4l_lepFilter_13TeV_dataset.h5", "hChToTauNu_13TeV_PU20_datas
 # read signal data
 signal_data = []
 for i, label in enumerate(signal_labels):
-    with h5py.File(folder+signals_file[i], "r") as file:
+    with h5py.File(folder + signals_file[i], "r") as file:
         test_data = np.array(file["Data"])
     signal_data.append(test_data)
 
@@ -188,14 +177,14 @@ save_file = "save_file"
 
 # In[ ]:
 
-'''
+"""
 with h5py.File(save_file, "w") as file:
     file.create_dataset("BKG_input", data=X_test)
     file.create_dataset("BKG_predicted", data=bkg_prediction)
     for i, sig in enumerate(signal_results):
         file.create_dataset("%s_input" % sig[0], data=sig[1])
         file.create_dataset("%s_predicted" % sig[0], data=sig[2])
-'''
+"""
 
 # ## Evaluate results
 #
@@ -208,8 +197,8 @@ with h5py.File(save_file, "w") as file:
 
 
 def mse_loss(true, prediction):
-    loss = tf.reduce_mean(tf.math.square(true - prediction),axis=-1)
-    #loss = - tf.reduce_mean(tf.math.log(1-(tf.math.square(true - prediction))),axis=-1)
+    loss = tf.reduce_mean(tf.math.square(true - prediction), axis=-1)
+    # loss = - tf.reduce_mean(tf.math.log(1-(tf.math.square(true - prediction))),axis=-1)
     return loss
 
 
@@ -254,8 +243,7 @@ plt.show()
 # In[ ]:
 
 
-from sklearn.metrics import roc_curve, auc
-
+from sklearn.metrics import auc, roc_curve
 
 # In[ ]:
 
@@ -279,6 +267,9 @@ for i, label in enumerate(labels):
     predVal_loss = np.concatenate((total_loss[i], total_loss[0]))
 
     fpr_loss, tpr_loss, threshold_loss = roc_curve(trueVal, predVal_loss)
+    for i in range(len(fpr_loss)):
+        if fpr_loss[i] == 0.00001:
+            print(label, tpr_loss[i])
 
     auc_loss = auc(fpr_loss, tpr_loss)
 
@@ -286,7 +277,7 @@ for i, label in enumerate(labels):
         fpr_loss,
         tpr_loss,
         "-",
-        label="%s (auc = %.1f%%)" % (label, auc_loss * 100.0),
+        label=f"{label} (auc = {auc_loss * 100.0:.1f}%)",
         linewidth=1.5,
     )
 

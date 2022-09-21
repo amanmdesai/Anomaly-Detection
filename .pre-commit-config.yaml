@@ -23,14 +23,14 @@
     hooks:
       - id: isort
         name: isort (python)
-        args: ["--profile", "black", "-a", "from __future__ import annotations", "--append-only"]
+        #args: ["--profile", "black", "-a", "from __future__ import annotations", "--append-only"]
 
   - repo: https://github.com/PyCQA/flake8
     rev: "4.0.1"
     hooks:
       - id: flake8
         additional_dependencies: ["flake8-bugbear"]
-
+        args: ['--ignore=F821,F401,B007,E501,E402']
   - repo: https://github.com/codespell-project/codespell
     rev: "v2.2.1"
     hooks:
