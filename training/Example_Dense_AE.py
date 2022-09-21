@@ -60,6 +60,8 @@ with h5py.File(folder+filename, "r") as file:
 input_shape = 60
 latent_dimension = 5
 num_nodes = [20, 15]
+EPOCHS = 15
+BATCH_SIZE = 512
 
 
 # In[6]:
@@ -68,13 +70,17 @@ num_nodes = [20, 15]
 # encoder
 inputArray = Input(shape=(input_shape))
 x = Dense(num_nodes[0], use_bias=False)(inputArray)
-x = Activation("relu")(x)
+x = Activation("ReLU")(x)
+x = Dense(num_nodes[1], use_bias=False)(x)
+x = Activation("ReLU")(x)
 x = Dense(latent_dimension, use_bias=False)(x)
-encoder = Activation("relu")(x)
+encoder = Activation("ReLU")(x)
 
 # decoder
 x = Dense(num_nodes[0], use_bias=False)(encoder)
-x = Activation("relu")(x)
+x = Activation("ReLU")(x)
+x = Dense(num_nodes[1], use_bias=False)(x)
+x = Activation("ReLU")(x)
 decoder = Dense(input_shape)(x)
 
 # create autoencoder
@@ -85,7 +91,7 @@ autoencoder.summary()
 # In[7]:
 
 
-autoencoder.compile(optimizer=keras.optimizers.Adam(), loss="mse")
+autoencoder.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001), loss="mse",metrics=['ACC']) #,metrics=['AUC','ACC','MSE'])
 
 
 # ## Train model
@@ -93,12 +99,19 @@ autoencoder.compile(optimizer=keras.optimizers.Adam(), loss="mse")
 # In[8]:
 
 
-EPOCHS = 10
-BATCH_SIZE = 512
 
 
 # In[9]:
 
+callbacks=tf.keras.callbacks.EarlyStopping(
+    monitor='val_ACC',
+    min_delta=0,
+    patience=10,
+    verbose=0,
+    mode='auto',
+    baseline=None,
+    restore_best_weights=False
+)
 
 history = autoencoder.fit(
     X_train,
@@ -106,6 +119,7 @@ history = autoencoder.fit(
     epochs=EPOCHS,
     batch_size=BATCH_SIZE,
     validation_data=(X_val, X_val),
+    callbacks=callbacks
 )
 
 
@@ -174,14 +188,14 @@ save_file = "save_file"
 
 # In[ ]:
 
-
+'''
 with h5py.File(save_file, "w") as file:
     file.create_dataset("BKG_input", data=X_test)
     file.create_dataset("BKG_predicted", data=bkg_prediction)
     for i, sig in enumerate(signal_results):
         file.create_dataset("%s_input" % sig[0], data=sig[1])
         file.create_dataset("%s_predicted" % sig[0], data=sig[2])
-
+'''
 
 # ## Evaluate results
 #
@@ -195,6 +209,7 @@ with h5py.File(save_file, "w") as file:
 
 def mse_loss(true, prediction):
     loss = tf.reduce_mean(tf.math.square(true - prediction),axis=-1)
+    #loss = - tf.reduce_mean(tf.math.log(1-(tf.math.square(true - prediction))),axis=-1)
     return loss
 
 
@@ -214,7 +229,7 @@ for i, signal_X in enumerate(signal_data):
 
 
 bin_size = 100
-
+"""
 plt.figure(figsize=(10, 8))
 for i, label in enumerate(signal_labels):
     plt.hist(
@@ -232,7 +247,7 @@ plt.ylabel("Probability (a.u.)")
 plt.title("MSE loss")
 plt.legend(loc="best")
 plt.show()
-
+"""
 
 # # 2.
 
