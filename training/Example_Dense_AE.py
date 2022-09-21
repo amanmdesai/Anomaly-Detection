@@ -45,7 +45,7 @@ input_shape = 60
 latent_dimension = 5
 num_nodes = [14, 9]
 EPOCHS = 15
-BATCH_SIZE = 512
+BATCH_SIZE = 256
 
 
 # In[6]:
