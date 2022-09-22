@@ -7,7 +7,6 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
 from sklearn.metrics import auc, roc_curve
-from sklearn.preprocessing import StandardScaler
 from tensorflow.keras import backend as K
 from tensorflow.keras.initializers import GlorotUniform
 from tensorflow.keras.layers import Activation  # LeakyReLU,; ReLU,
@@ -295,9 +294,9 @@ for i, label in enumerate(labels):
     predVal_loss = np.concatenate((total_loss[i], total_loss[0]))
 
     fpr_loss, tpr_loss, threshold_loss = roc_curve(trueVal, predVal_loss)
-    for i in range(len(fpr_loss)):
-        if fpr_loss[i] == 0.00001:
-            print(label, tpr_loss[i])
+    for j in range(len(fpr_loss)):
+        if fpr_loss[j] == 0.00001:
+            print(label, tpr_loss[j])
 
     auc_loss = auc(fpr_loss, tpr_loss)
 
