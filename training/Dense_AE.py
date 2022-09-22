@@ -6,12 +6,24 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
+from sklearn.metrics import auc, roc_curve
+from sklearn.preprocessing import StandardScaler
 from tensorflow.keras import backend as K
+from tensorflow.keras.initializers import GlorotUniform
 from tensorflow.keras.layers import Activation  # LeakyReLU,; ReLU,
 from tensorflow.keras.layers import BatchNormalization, Dense, Input, Layer
 from tensorflow.keras.models import Model
 
 # In[2]:
+gpus = tf.config.experimental.list_physical_devices("GPU")
+if gpus:
+    try:
+        tf.config.experimental.set_virtual_device_configuration(
+            gpus[0],
+            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=3072)],
+        )
+    except RuntimeError as e:
+        print(e)
 
 
 # from func import load_model, save_model
@@ -35,7 +47,10 @@ with h5py.File(folder + filename, "r") as file:
     X_test = np.array(file["X_test"])
     X_val = np.array(file["X_val"])
 
-
+# scaler = StandardScaler()
+# X_train = scaler.fit_transform(X_train[:], X_train[:])
+# X_test = scaler.transform(X_test[:])
+# X_val = scaler.transform(X_val[:])
 # ## Define Dense NN architecture
 
 # In[5]:
@@ -43,28 +58,33 @@ with h5py.File(folder + filename, "r") as file:
 
 input_shape = 60
 latent_dimension = 5
-num_nodes = [14, 9]
-EPOCHS = 15
-BATCH_SIZE = 256
+num_nodes = [19, 14, 9]  # [25,15]#
+EPOCHS = 20
+BATCH_SIZE = 1024
 
-
-# In[6]:
-
-
+activation = "LeakyReLU"  # LeakyReLU
 # encoder
+
+initializer = tf.keras.initializers.GlorotUniform()
+
+
 inputArray = Input(shape=(input_shape))
-x = Dense(num_nodes[0], use_bias=False)(inputArray)
-x = Activation("LeakyReLU")(x)
-x = Dense(num_nodes[1], use_bias=False)(x)
-x = Activation("LeakyReLU")(x)
-x = Dense(latent_dimension, use_bias=False)(x)
-encoder = Activation("LeakyReLU")(x)
+x = Dense(num_nodes[0], use_bias=False, kernel_initializer=initializer)(inputArray)
+x = Activation(activation)(x)
+x = Dense(num_nodes[1], use_bias=False, kernel_initializer=initializer)(x)
+x = Activation(activation)(x)
+x = Dense(num_nodes[2], use_bias=False, kernel_initializer=initializer)(x)
+x = Activation(activation)(x)
+x = Dense(latent_dimension, use_bias=False, kernel_initializer=initializer)(x)
+encoder = Activation(activation)(x)
 
 # decoder
-x = Dense(num_nodes[0], use_bias=False)(encoder)
-x = Activation("LeakyReLU")(x)
-x = Dense(num_nodes[1], use_bias=False)(x)
-x = Activation("LeakyReLU")(x)
+x = Dense(num_nodes[2], use_bias=False, kernel_initializer=initializer)(encoder)
+x = Activation(activation)(x)
+x = Dense(num_nodes[1], use_bias=False, kernel_initializer=initializer)(x)
+x = Activation(activation)(x)
+x = Dense(num_nodes[0], use_bias=False, kernel_initializer=initializer)(x)
+x = Activation(activation)(x)
 decoder = Dense(input_shape)(x)
 
 # create autoencoder
@@ -76,8 +96,8 @@ autoencoder.summary()
 
 
 autoencoder.compile(
-    optimizer=keras.optimizers.Adam(), loss="mse", metrics=["ACC"]
-)  # ,metrics=['AUC','ACC','MSE'])
+    optimizer=keras.optimizers.Adam(), loss="mse", metrics=["ACC", "AUC"]
+)  # ,metrics=['AUC','ACC','MSE']) #loss= "mse", mae, msle MeanSquaredLogarithmicError
 
 
 # ## Train model
@@ -88,13 +108,13 @@ autoencoder.compile(
 # In[9]:
 
 callbacks = tf.keras.callbacks.EarlyStopping(
-    monitor="val_ACC",
-    min_delta=0,
+    monitor="val_auc",
+    min_delta=0.003,
     patience=10,
-    verbose=0,
-    mode="auto",
+    verbose=1,
+    mode="max",
     baseline=None,
-    restore_best_weights=False,
+    restore_best_weights=True,
 )
 
 history = autoencoder.fit(
@@ -103,7 +123,7 @@ history = autoencoder.fit(
     epochs=EPOCHS,
     batch_size=BATCH_SIZE,
     validation_data=(X_val, X_val),
-    # callbacks=callbacks,
+    callbacks=callbacks,
 )
 
 
@@ -153,6 +173,7 @@ for i, label in enumerate(signal_labels):
     with h5py.File(folder + signals_file[i], "r") as file:
         test_data = np.array(file["Data"])
     signal_data.append(test_data)
+    # signal_data = scaler.transform(signal_data)
 
 
 # In[ ]:
@@ -243,16 +264,23 @@ plt.show()
 # In[ ]:
 
 
-from sklearn.metrics import auc, roc_curve
-
 # In[ ]:
 
 
 labels = np.concatenate([["Background"], np.array(signal_labels)])
 
 
-# In[ ]:
+"""
+plt.plot(model.history.history["loss"], label="Training loss")
+plt.plot(model.history.history["val_loss"], label="Validation loss")
+plt.legend()
+plt.show()
 
+plt.plot(model.history.history["ACC"], label="Training accuracy")
+plt.plot(model.history.history["val_ACC"], label="Validation accuracy")
+plt.legend()
+plt.show()
+"""
 
 target_background = np.zeros(total_loss[0].shape[0])
 
