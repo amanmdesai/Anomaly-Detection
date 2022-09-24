@@ -1,3 +1,7 @@
+"""
+
+
+
 for i in range(full_data.shape[0]):
     for j in range(full_data.shape[1]):
         if (j % 3 == 0) & (j <= 54):
@@ -33,3 +37,5 @@ for i in range(57):
     ax.set_xlabel(xlabel)
     ax.set_ylabel("Counts")
 plt.show()
+
+"""
