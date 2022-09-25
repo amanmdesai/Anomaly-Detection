@@ -56,8 +56,8 @@ with h5py.File(folder + filename, "r") as file:
 
 
 input_shape = 57
-latent_dimension = 5
-num_nodes = [32, 16, 9]  # [25,15]#
+latent_dimension = 6
+num_nodes = [24, 16, 10]  # [25,15]#
 EPOCHS = 20
 BATCH_SIZE = 1024
 activation = "LeakyReLU"  # LeakyReLU
@@ -72,25 +72,20 @@ x = Dense(num_nodes[0], use_bias=False, kernel_initializer=initializer)(inputArr
 x = Activation(activation)(x)
 x = Dense(num_nodes[1], use_bias=False, kernel_initializer=initializer)(x)
 x = Activation(activation)(x)
-#x = Dense(num_nodes[2], use_bias=False, kernel_initializer=initializer)(x)
-#x = Activation(activation)(x)
+x = Activation(activation)(x)
 x = Dense(latent_dimension, use_bias=False, kernel_initializer=initializer)(x)
 x = Activation(activation)(x)
-encoder_1 = Dense(latent_dimension - 3, use_bias=False, kernel_initializer=initializer)(
-    x
-)
-encoder_act1 = Activation("ReLU")(encoder_1)
-encoder_2 = Dense(latent_dimension - 2, use_bias=False, kernel_initializer=initializer)(
-    x
-)
-encoder_act2 = Activation("ReLU")(encoder_2)
+encoder_1 = Dense(latent_dimension - 3, use_bias=True, kernel_initializer=initializer)(x)
+encoder_act1 = Activation("linear")(encoder_1)
+encoder_2 = Dense(latent_dimension - 2, use_bias=True, kernel_initializer=initializer)(x)
+encoder_act2 = Activation("linear")(encoder_2)
 
 
 # decoder
 merged = Concatenate()([encoder_act1, encoder_act2])
-x = Activation("softmax")(merged)
-#x = Dense(num_nodes[2], use_bias=False, kernel_initializer=initializer)(merged)
-#x = Activation(activation)(x)
+x = Activation(activation)(merged)
+x = Dense(num_nodes[2], use_bias=False, kernel_initializer=initializer)(x)
+x = Activation(activation)(x)
 x = Dense(num_nodes[1], use_bias=False, kernel_initializer=initializer)(x)
 x = Activation(activation)(x)
 x = Dense(num_nodes[0], use_bias=False, kernel_initializer=initializer)(x)
@@ -111,7 +106,7 @@ plot_model(
 autoencoder.compile(
     optimizer=keras.optimizers.Adam(learning_rate=0.005),
     loss="mse",
-    metrics=["ACC"],  # , "AUC"]
+    metrics=['AUC','ACC'],  # , "AUC"]
 )  # ,metrics=['AUC','ACC','MSE']) #loss= "mse", mae, msle MeanSquaredLogarithmicError mean_squared_logarithmic_error
 
 
@@ -119,11 +114,11 @@ autoencoder.compile(
 
 
 callbacks = tf.keras.callbacks.EarlyStopping(
-    monitor="val_ACC",
+    monitor="loss",
     min_delta=0.002,
     patience=10,
     verbose=1,
-    mode="max",
+    mode="min",
     baseline=None,
     restore_best_weights=True,
 )
@@ -134,7 +129,7 @@ history = autoencoder.fit(
     epochs=EPOCHS,
     batch_size=BATCH_SIZE,
     validation_data=(X_val, X_val),
-    #callbacks=callbacks,
+    callbacks=callbacks,
     verbose=1,
 )
 
