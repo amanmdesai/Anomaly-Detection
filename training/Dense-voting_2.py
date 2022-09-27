@@ -23,7 +23,7 @@ from tensorflow.keras.layers import (
     Layer,
 )
 from tensorflow.keras.models import Model
-
+'''
 # In[2]:
 gpus = tf.config.experimental.list_physical_devices("GPU")
 if gpus:
@@ -34,6 +34,11 @@ if gpus:
         )
     except RuntimeError as e:
         print(e)
+'''
+
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess= tf.Session(config=config):
 
 
 # In[2]:
@@ -72,7 +77,8 @@ x = Dense(num_nodes[0], use_bias=False, kernel_initializer=initializer)(inputArr
 x = Activation(activation)(x)
 x = Dense(num_nodes[1], use_bias=False, kernel_initializer=initializer)(x)
 x = Activation(activation)(x)
-x = Activation(activation)(x)
+#x = Dense(num_nodes[2], use_bias=False, kernel_initializer=initializer)(x)
+#x = Activation(activation)(x)
 x = Dense(latent_dimension, use_bias=False, kernel_initializer=initializer)(x)
 x = Activation(activation)(x)
 encoder_1 = Dense(latent_dimension - 3, use_bias=False, kernel_initializer=initializer)(x)
@@ -84,8 +90,8 @@ encoder_act2 = Activation("linear")(encoder_2)
 # decoder
 merged = Concatenate()([encoder_act1, encoder_act2])
 x = Activation(activation)(merged)
-x = Dense(num_nodes[2], use_bias=False, kernel_initializer=initializer)(x)
-x = Activation(activation)(x)
+#x = Dense(num_nodes[2], use_bias=False, kernel_initializer=initializer)(x)
+#x = Activation(activation)(x)
 x = Dense(num_nodes[1], use_bias=False, kernel_initializer=initializer)(x)
 x = Activation(activation)(x)
 x = Dense(num_nodes[0], use_bias=False, kernel_initializer=initializer)(x)
