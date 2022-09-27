@@ -75,9 +75,9 @@ x = Activation(activation)(x)
 x = Activation(activation)(x)
 x = Dense(latent_dimension, use_bias=False, kernel_initializer=initializer)(x)
 x = Activation(activation)(x)
-encoder_1 = Dense(latent_dimension - 3, use_bias=True, kernel_initializer=initializer)(x)
+encoder_1 = Dense(latent_dimension - 3, use_bias=False, kernel_initializer=initializer)(x)
 encoder_act1 = Activation("linear")(encoder_1)
-encoder_2 = Dense(latent_dimension - 2, use_bias=True, kernel_initializer=initializer)(x)
+encoder_2 = Dense(latent_dimension - 2, use_bias=False, kernel_initializer=initializer)(x)
 encoder_act2 = Activation("linear")(encoder_2)
 
 
