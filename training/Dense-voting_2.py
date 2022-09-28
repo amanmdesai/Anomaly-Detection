@@ -36,9 +36,12 @@ if gpus:
         print(e)
 '''
 
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-sess= tf.Session(config=config):
+
+gpus = tf.config.experimental.list_physical_devices('GPU')
+for gpu in gpus:
+  tf.config.experimental.set_memory_growth(gpu, True)
+
+
 
 
 # In[2]:
@@ -63,7 +66,7 @@ with h5py.File(folder + filename, "r") as file:
 input_shape = 57
 latent_dimension = 6
 num_nodes = [24, 16, 10]  # [25,15]#
-EPOCHS = 20
+EPOCHS = 50
 BATCH_SIZE = 1024
 activation = "LeakyReLU"  # LeakyReLU
 
