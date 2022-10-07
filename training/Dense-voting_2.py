@@ -23,14 +23,14 @@ from tensorflow.keras.layers import (
     Layer,
 )
 from tensorflow.keras.models import Model
-'''
+	
 # In[2]:
 gpus = tf.config.experimental.list_physical_devices("GPU")
 if gpus:
     try:
         tf.config.experimental.set_virtual_device_configuration(
             gpus[0],
-            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=3072)],
+            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=4096)],
         )
     except RuntimeError as e:
         print(e)
@@ -40,7 +40,7 @@ if gpus:
 gpus = tf.config.experimental.list_physical_devices('GPU')
 for gpu in gpus:
   tf.config.experimental.set_memory_growth(gpu, True)
-
+'''
 
 
 
@@ -131,6 +131,8 @@ callbacks = tf.keras.callbacks.EarlyStopping(
     baseline=None,
     restore_best_weights=True,
 )
+
+#X_train = X_train[:1000,:]
 
 history = autoencoder.fit(
     X_train,
