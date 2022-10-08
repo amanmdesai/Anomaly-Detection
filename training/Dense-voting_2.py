@@ -23,7 +23,7 @@ from tensorflow.keras.layers import (
     Layer,
 )
 from tensorflow.keras.models import Model
-	
+'''	
 # In[2]:
 gpus = tf.config.experimental.list_physical_devices("GPU")
 if gpus:
@@ -34,7 +34,7 @@ if gpus:
         )
     except RuntimeError as e:
         print(e)
-'''
+
 
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -42,6 +42,8 @@ for gpu in gpus:
   tf.config.experimental.set_memory_growth(gpu, True)
 '''
 
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 # In[2]:
@@ -66,8 +68,8 @@ with h5py.File(folder + filename, "r") as file:
 input_shape = 57
 latent_dimension = 6
 num_nodes = [24, 16, 10]  # [25,15]#
-EPOCHS = 50
-BATCH_SIZE = 1024
+EPOCHS = 5
+BATCH_SIZE = 2048
 activation = "LeakyReLU"  # LeakyReLU
 
 
