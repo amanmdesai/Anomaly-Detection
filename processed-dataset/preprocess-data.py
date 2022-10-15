@@ -77,6 +77,7 @@ def create_datasets_dense(
     del X_train
     del X_test
     del X_val
+    print('background done') 
     
     if signals_files:
         # read SIGNAL data
@@ -84,6 +85,7 @@ def create_datasets_dense(
             f = h5py.File(folder + signal_file, "r")
             signal_data = f["Particles"][:, :, :-1]
             full_data = signal_data.reshape(signal_data.shape[0], input_shape)
+            del signal_data
             # nel = 4 * np.ones(full_data.shape[0])
             # nmu = 4 * np.ones(full_data.shape[0])
             # njet = 10 * np.ones(full_data.shape[0])
@@ -112,6 +114,8 @@ def create_datasets_dense(
             # del full_data, signal_data
             with h5py.File(output_signal_names[k] + "_dataset.h5", "w") as h5f2:
                 h5f2.create_dataset("Data", data=full_data)
+                del full_data
+            print('signal done') 
     return
 
 

@@ -21,21 +21,33 @@ from tensorflow.keras.layers import (
     Dense,
     Input,
     Layer,
+    Dropout
 )
 from tensorflow.keras.models import Model
-"""
+
 # In[2]:
+"""
 gpus = tf.config.experimental.list_physical_devices("GPU")
 if gpus:
     try:
         tf.config.experimental.set_virtual_device_configuration(
             gpus[0],
-            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=3072)],
+            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=4096)],
         )
     except RuntimeError as e:
         print(e)
 
+
+
+gpus = tf.config.experimental.list_physical_devices('GPU')
+for gpu in gpus:
+  tf.config.experimental.set_memory_growth(gpu, True)
 """
+
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
+
 # In[2]:
 
 
@@ -56,45 +68,34 @@ with h5py.File(folder + filename, "r") as file:
 
 
 input_shape = 57
-latent_dimension = 6
-num_nodes = [25, 18, 10]  # [25,15]#
-EPOCHS = 15
-BATCH_SIZE = 512
-activation = "LeakyReLU"  # LeakyReLU
+latent_dimension = 5
+num_nodes = [24, 16, 10]  # [25,15]#
+EPOCHS = 5
+BATCH_SIZE = 1024
+activation = "ReLU"  # LeakyReLU
 
 
 # In[16]:
-
+#use_bias=False, kernel_initializer=initializer
 
 initializer = tf.keras.initializers.GlorotUniform()
 inputArray = Input(shape=(input_shape))
-x = Dense(num_nodes[0], use_bias=False, kernel_initializer=initializer)(inputArray)
+x = Dense(num_nodes[0])(inputArray)
 x = Activation(activation)(x)
-x = Dense(num_nodes[1], use_bias=False, kernel_initializer=initializer)(x)
+#x = Dropout(0.1)(x)
+x = Dense(num_nodes[1])(x)
 x = Activation(activation)(x)
-x = Dense(num_nodes[2], use_bias=False, kernel_initializer=initializer)(x)
+#x = Dropout(0.1)(x)
+x = Dense(latent_dimension)(x)
 x = Activation(activation)(x)
-x = Dense(latent_dimension, use_bias=False, kernel_initializer=initializer)(x)
-x = Activation(activation)(x)
-encoder_1 = Dense(latent_dimension - 3, use_bias=False, kernel_initializer=initializer)(
-    x
-)
-encoder_act1 = Activation("ReLU")(encoder_1)
-encoder_2 = Dense(latent_dimension - 2, use_bias=False, kernel_initializer=initializer)(
-    x
-)
-encoder_act2 = Activation("ReLU")(encoder_2)
-
 
 # decoder
-merged = Concatenate()([encoder_act1, encoder_act2])
-x = Activation("softmax")(merged)
-x = Dense(num_nodes[2], use_bias=False, kernel_initializer=initializer)(merged)
+x = Dense(num_nodes[1])(x)
 x = Activation(activation)(x)
-x = Dense(num_nodes[1], use_bias=False, kernel_initializer=initializer)(x)
+#x = Dropout(0.1)(x)
+x = Dense(num_nodes[0])(x)
 x = Activation(activation)(x)
-x = Dense(num_nodes[0], use_bias=False, kernel_initializer=initializer)(x)
-x = Activation(activation)(x)
+#x = Dropout(0.1)(x)
 decoder = Dense(input_shape)(x)
 
 # create autoencoder
@@ -111,7 +112,7 @@ plot_model(
 autoencoder.compile(
     optimizer=keras.optimizers.Adam(learning_rate=0.001),
     loss="mse",
-    metrics=["ACC"],  # , "AUC"]
+    metrics=['AUC','ACC'],  # , "AUC"]
 )  # ,metrics=['AUC','ACC','MSE']) #loss= "mse", mae, msle MeanSquaredLogarithmicError mean_squared_logarithmic_error
 
 
@@ -119,14 +120,16 @@ autoencoder.compile(
 
 
 callbacks = tf.keras.callbacks.EarlyStopping(
-    monitor="val_auc",
-    min_delta=0.003,
-    patience=10,
+    monitor="loss",
+    min_delta=0.002,
+    patience=5,
     verbose=1,
-    mode="max",
+    mode="min",
     baseline=None,
     restore_best_weights=True,
 )
+
+#X_train = X_train[:1000,:]
 
 history = autoencoder.fit(
     X_train,
