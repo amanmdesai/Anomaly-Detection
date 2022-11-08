@@ -34,57 +34,44 @@ X_train.shape[1]
 
 
 input_shape = 57
-latent_dimension = 5
-num_nodes=[45,35,20]
+latent_dimension = 6
+#num_nodes=[40,30,20]
 
-EPOCHS = 25
+#num_nodes=[25,20]
+num_nodes=[25,20]
+
+EPOCHS = 20
 BATCH_SIZE = 512
 
 
-class Gauss(layers.Layer):
+class custom_func(layers.Layer):
     def call(self, inputs):
         z_mean, z_log_var = inputs
-        batch = tf.shape(z_mean)[0]
-        dim = tf.shape(z_mean)[1]
-        epsilon = tf.keras.backend.random_normal(shape=(batch, dim))
+        batches = tf.shape(z_mean)[0]
+        dimension = tf.shape(z_mean)[1]
+        epsilon = tf.keras.backend.random_normal(shape=(batches, dimension))
         return z_mean + tf.exp(-1*(z_log_var)*(z_log_var)) * epsilon + tf.exp(-1*z_mean) * epsilon
-
-class Poisson(layers.Layer):
-    def call(self, inputs):
-        z_mean = inputs
-        batch = tf.shape(z_mean)[0]
-        dim = tf.shape(z_mean)[1]
-        epsilon = tf.keras.backend.random_normal(shape=(batch, dim))
-        #return z_mean + tf.exp(0.5 * z_log_var) * epsilon
-        return z_mean + tf.exp(-1*z_mean) * epsilon + tf.exp(-1*z_mean*z_mean) * epsilon
-
 
 
 inputArray = keras.Input(shape=(57))
 x = Dense(num_nodes[0], activation='LeakyReLU',use_bias=False)(inputArray)
 x = Dense(num_nodes[1], activation='LeakyReLU',use_bias=False)(x)
-x = Dense(num_nodes[2], activation='LeakyReLU',use_bias=False)(x)
-#x = Dense(25, activation='LeakyReLU',use_bias=False)(x)
 
 z_mean_1 = layers.Dense(latent_dimension, activation='ReLU', name="z_mean_1")(x)
-#z_mean_2 = layers.Dense(latent_dimension,activation='LeakyReLU', name="z_mean_2",use_bias=False)(x)
 z_log_var = layers.Dense(latent_dimension, activation='ReLU', name="z_log_var")(x)
-z_1 = Gauss()([z_mean_1, z_log_var])
-#z_2 = Poisson()(z_mean_2)
+z_1 = custom_func()([z_mean_1, z_log_var])
 
-#merged = Concatenate()([z_1, z_2])
-#x = Activation("LeakyReLU")(merged)
-bottle_neck = Dense(latent_dimension, activation='LeakyReLU')(z_1)
+bottle_neck = Dense(latent_dimension, activation='LeakyReLU',use_bias=False)(z_1)
 
-x = Dense(num_nodes[2], activation='LeakyReLU',use_bias=False)(bottle_neck)
-x = Dense(num_nodes[1], activation='LeakyReLU',use_bias=False)(x)
+x = Dense(num_nodes[1], activation='LeakyReLU',use_bias=False)(bottle_neck)
 x = Dense(num_nodes[0], activation='LeakyReLU',use_bias=False)(x)
+
 decoder = Dense(input_shape)(x)
 
 autoencoder = Model(inputs = inputArray, outputs=decoder)
 autoencoder.summary()
 autoencoder.compile(
-    optimizer=keras.optimizers.Adam(learning_rate=0.002),
+    optimizer=keras.optimizers.Adam(learning_rate=0.003),
     loss="mse",
     metrics=['ACC'])
 
@@ -107,8 +94,8 @@ tf.keras.utils.plot_model(
 
 
 
-filepath = 'models/my_best_model.epoch{epoch:02d}-loss{val_loss:.2f}.hdf5'
-
+#filepath = 'models/my_best_model.epoch{epoch:02d}-loss{val_loss:.2f}.hdf5'
+filepath = 'models/best_model.hdf5'
 checkpoint = ModelCheckpoint(filepath=filepath,
                              monitor='val_loss',
                              verbose=1,
@@ -159,12 +146,12 @@ def load_model(model_name, custom_objects=None):
     loaded_model_json = json_file.read()
     json_file.close()
     model = model_from_json(loaded_model_json, custom_objects=custom_objects)
-    model.load_weights(model_name + '.h5')
+    model.load_weights(filepath)
     return model
 
 
 
-
+del X_train, X_val
 
 model_name = 'model_ae_aman'
 model_directory = 'result/'
