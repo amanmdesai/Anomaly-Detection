@@ -3,7 +3,8 @@ My code for the ADC challenge
 
 
 
-## :construction:Log book
+## Description
+
 
 Until 23 September i have pre-processed the data and included -9 when there is absence of the particle. In addition I have also included three additional variables the number of electrons, muons and jets. However it is not clear if these additions will be okay as such. The results of the previous studies until then are stored in the `more-variable-experiment` folder.
 
